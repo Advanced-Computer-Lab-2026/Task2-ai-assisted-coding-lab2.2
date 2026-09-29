@@ -1,4 +1,5 @@
 import { Router } from 'express';
+
 import {
   getAllRatings,
   getRating,
@@ -8,6 +9,16 @@ import {
 
 const router = Router();
 
-// TODO: wire up the three routes in README.md section 2 and the summary route in section 3.
+// IMPORTANT: /summary must be before /:id
+router.get('/summary', getRatingSummary);
+
+// GET /api/ratings
+router.get('/', getAllRatings);
+
+// POST /api/ratings
+router.post('/', createRating);
+
+// GET /api/ratings/:id
+router.get('/:id', getRating);
 
 export default router;
