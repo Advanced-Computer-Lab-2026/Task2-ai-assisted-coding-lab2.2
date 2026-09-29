@@ -1,0 +1,580 @@
+ ▐▛███▛█   Claude Code v2.1.282
+▝▜██████▀  gemma4:31b · API Usage Billing
+ ▝▝   ▝▝   D:\mmhaf\Documents\school\uni\sem7\media lab\Task 2.2\Task2-ai-a…
+
+
+❯ Explore the code and understand the requirements needed to be implemented     
+  from the README.md file                                                       
+
+  Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+● I have explored the codebase and read the README.md. Here is a summary of the
+  requirements for Task 2.2: Movie Rating API.
+
+  Goal
+
+  Build a backend for a movie rating service using Express and MongoDB 
+  (Mongoose). There is no authentication/login for this specific resource.
+
+  Work to be implemented
+
+  All changes are restricted to three files:
+  1. server/src/models/Rating.js
+  2. server/src/controllers/ratingController.js
+  3. server/src/routes/ratings.js
+
+  1. The Rating Model
+
+  The schema needs the following fields:
+  - movieCode: String (required)
+  - rating: Number (required, min: 1, max: 5)
+  - note: String (optional)
+  - ratedBy: ObjectId ref User (optional)
+  - Additional Requirements:
+    - Enable { timestamps: true }.
+    - Implement a compound unique index on { movieCode: 1, ratedBy: 1 }.
+
+  2. Controller & Routes
+
+  Implement the following endpoints in ratingController.js and wire them in
+  ratings.js:
+
+  ┌────────┬──────────────────┬─────────────────┬───────────────┬───────────┐
+  │ Method │       Path       │   Controller    │   Success     │   Notes   │
+  │        │                  │    Function     │   Response    │           │
+  ├────────┼──────────────────┼─────────────────┼───────────────┼───────────┤
+  │ POST   │ /api/ratings     │ createRating    │ 201 { rating: │           │
+  │        │                  │                 │  <doc> }      │           │
+  ├────────┼──────────────────┼─────────────────┼───────────────┼───────────┤
+  │        │                  │                 │ 200 {         │           │
+  │ GET    │ /api/ratings     │ getAllRatings   │ ratings:      │           │
+  │        │                  │                 │ [...] }       │           │
+  ├────────┼──────────────────┼─────────────────┼───────────────┼───────────┤
+  │ GET    │ /api/ratings/:id │ getRating       │ 200 { rating: │ 404 if    │
+  │        │                  │                 │  <doc> }      │ not found │
+  └────────┴──────────────────┴─────────────────┴───────────────┴───────────┘
+
+  - Errors should be passed to next(err).
+
+  3. Summary Endpoint
+
+  Implement a specialized summary endpoint:
+  - Path: GET /api/ratings/summary?movieCode=MV101
+  - Controller Function: getRatingSummary
+  - Requirements:
+    - Must use Rating.aggregate() with $match and $group (calculating $avg and
+      $sum).
+    - Response Format: { "movieCode": "...", "averageRating": <number>, 
+      "ratingCount": <integer> }
+    - Edge Cases:
+      - No matches $\rightarrow$ averageRating: 0, ratingCount: 0.
+      - Missing movieCode query param $\rightarrow$ 400 { message: 'movieCode is
+        required' }.
+      - Routing: Ensure /summary is defined before /:id to avoid being treated
+        as an ID.
+
+  Existing References
+
+  The User model and its corresponding controller/routes (userController.js and
+  users.js) are already implemented and should be used as a structural guide for
+  the Rating implementation.
+
+✻ Sautéed for 26s · done 10:14 AM
+
+❯ Based on the requirements, implement them and before attempting final         
+  changes, show me the changes                                                  
+
+● Entered plan mode
+  Claude is now exploring and designing an implementation approach.
+
+  Read 3 files (ctrl+o to expand)
+  ⎿  Initializing…
+  ⎿  Invalid tool parameters
+
+● Plan(Plan the implementation of the Movie Rating API endpoints and model.)
+  ⎿  Backgrounded agent (↓ to manage · ctrl+o to expand)
+
+● Updated plan
+  ⎿  /plan to preview
+
+● User approved Claude's plan
+  ⎿  Plan saved to: C:\Users\mmhaf\.claude\plans\cozy-tickling-lampson.md · 
+     /plan to edit
+     Implementation Plan: Movie Rating API
+
+     Context
+
+     The goal is to implement a Movie Rating API backend using Express and
+     MongoDB (Mongoose). This service allows users to submit and browse movie
+     ratings without requiring authentication. The implementation focuses on a
+     Rating model, a controller for rating operations, and corresponding routes.
+
+     Critical Files
+
+     - server/src/models/Rating.js: Define the Rating schema and compound index.
+     - server/src/controllers/ratingController.js: Implement the business logic
+       for ratings and the aggregation summary.
+     - server/src/routes/ratings.js: Wire the endpoints to the controller.
+
+     Implementation Details
+
+     1. Rating Model (server/src/models/Rating.js)
+
+     - Schema:
+       - movieCode: { type: String, required: true }
+       - rating: { type: Number, required: true, min: 1, max: 5 }
+       - note: { type: String } (optional)
+       - ratedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+         (optional)
+     - Options: { timestamps: true }
+     - Index: ratingSchema.index({ movieCode: 1, ratedBy: 1 }, { unique: true })
+
+     2. Rating Controller (server/src/controllers/ratingController.js)
+
+     - Validation: Use Joi to validate createRating input:
+       - movieCode: required string.
+       - rating: required number, min 1, max 5.
+       - note: optional string.
+       - ratedBy: optional valid MongoDB ObjectId string.
+     - Functions:
+       - createRating: Validate body $\rightarrow$ Rating.create() $\rightarrow$
+         return 201.
+       - getAllRatings: Rating.find().lean() $\rightarrow$ return 200.
+       - getRating: Rating.findById(id) $\rightarrow$ return 200 or 404 if not
+         found.
+       - getRatingSummary:
+         - Validate req.query.movieCode exists (return 400 if missing).
+         - Aggregation Pipeline:
+     [
+       { $match: { movieCode: req.query.movieCode } },
+       { $group: {
+           _id: '$movieCode',
+           averageRating: { $avg: '$rating' },
+           ratingCount: { $sum: 1 }
+       }}
+     ]
+         - Handle empty results: return { movieCode, averageRating: 0, 
+           ratingCount: 0 }.
+
+     3. Rating Routes (server/src/routes/ratings.js)
+
+     - Order of Endpoints:
+       a. GET / $\rightarrow$ getAllRatings
+       b. GET /summary $\rightarrow$ getRatingSummary (Must be before /:id)
+       c. GET /:id $\rightarrow$ getRating
+       d. POST / $\rightarrow$ createRating
+
+     Verification Plan
+
+     1. Model Verification: Check if the compound unique index prevents
+        duplicate ratings for the same user on the same movie.
+     2. API Tests:
+        - POST /api/ratings: Test valid input, invalid rating range, and
+          duplicate entries.
+        - GET /api/ratings: Verify all ratings are returned.
+        - GET /api/ratings/:id: Verify found vs not found (404).
+        - GET /api/ratings/summary:
+          - Valid movieCode with data.
+          - Valid movieCode without data (verify 0s).
+          - Missing movieCode query param (verify 400).
+     3. Route Priority: Verify GET /api/ratings/summary is not caught by GET 
+        /api/ratings/:id.
+
+● Write(src\models\Rating.js)
+  ⎿  Added 5 lines, removed 4 lines
+       1  import mongoose from 'mongoose';
+       2  
+       3 -// TODO: define the Rating schema per README.md section 1.     
+       4 -                                                               
+       3  const ratingSchema = new mongoose.Schema(
+       4    {
+       7 -    // TODO                                                    
+       5 +    movieCode: { type: String, required: true },               
+       6 +    rating: { type: Number, required: true, min: 1, max: 5 },  
+       7 +    note: { type: String },                                    
+       8 +    ratedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User
+         +' }                                                            
+       9    },
+      10    { timestamps: true }
+      11  );
+      12  
+      12 -// TODO: add the compound uniqueness constraint described in RE
+         -ADME.md section 1.                                             
+      13 +ratingSchema.index({ movieCode: 1, ratedBy: 1 }, { unique: true
+         + });                                                           
+      14  
+      15  export const Rating = mongoose.model('Rating', ratingSchema);
+
+● Write(src\controllers\ratingController.js)
+  ⎿  Added 51 lines, removed 10 lines
+       1 +import Joi from 'joi';                                         
+       2  import { Rating } from '../models/Rating.js';
+       3  
+       4 +const createSchema = Joi.object({                              
+       5 +  movieCode: Joi.string().required(),                          
+       6 +  rating: Joi.number().min(1).max(5).required(),               
+       7 +  note: Joi.string().optional(),                               
+       8 +  ratedBy: Joi.string().hex().length(24).optional()            
+       9 +});                                                            
+      10 +                                                               
+      11  // GET /api/ratings
+       4 -// TODO: implement per README.md section 2.                    
+      12  export async function getAllRatings(req, res, next) {
+      13    try {
+       7 -    // TODO                                                    
+      14 +    const ratings = await Rating.find().lean();                
+      15 +    res.json({ ratings });                                     
+      16    } catch (err) { next(err); }
+      17  }
+      18  
+      19  // GET /api/ratings/:id
+      12 -// TODO: implement per README.md section 2.                    
+      20  export async function getRating(req, res, next) {
+      21    try {
+      15 -    // TODO                                                    
+      22 +    const rating = await Rating.findById(req.params.id);       
+      23 +    if (!rating) return res.status(404).json({ message: 'Rating
+         + not found' });                                                
+      24 +    res.json({ rating });                                      
+      25    } catch (err) { next(err); }
+      26  }
+      27  
+      28  // POST /api/ratings
+      20 -// TODO: implement per README.md section 2.                    
+      29  export async function createRating(req, res, next) {
+      30    try {
+      23 -    // TODO                                                    
+      24 -  } catch (err) { next(err); }                                 
+      31 +    const { value, error } = createSchema.validate(req.body);  
+      32 +    if (error) return res.status(400).json({ message: error.mes
+         +sage });                                                       
+      33 +                                                               
+      34 +    const rating = await Rating.create(value);                 
+      35 +    res.status(201).json({ rating });                          
+      36 +  } catch (err) {                                              
+      37 +    if (err.code === 11000) {                                  
+      38 +      return res.status(409).json({ message: 'User has already 
+         +rated this movie' });                                          
+      39 +    }                                                          
+      40 +    next(err);                                                 
+      41 +  }                                                            
+      42  }
+      43  
+      27 -// GET /api/ratings/summary?movieCode=MV101                    
+      28 -// TODO: implement per README.md section 3.                    
+      44 +// GET /api/ratings/summary?movieCode=...                      
+      45  export async function getRatingSummary(req, res, next) {
+      46    try {
+      31 -    // TODO                                                    
+      47 +    const { movieCode } = req.query;                           
+      48 +    if (!movieCode) return res.status(400).json({ message: 'mov
+         +ieCode is required' });                                        
+      49 +                                                               
+      50 +    const results = await Rating.aggregate([                   
+      51 +      { $match: { movieCode } },                               
+      52 +      { $group: {                                              
+      53 +          _id: '$movieCode',                                   
+      54 +          averageRating: { $avg: '$rating' },                  
+      55 +          ratingCount: { $sum: 1 }                             
+      56 +      }}                                                       
+      57 +    ]);                                                        
+      58 +                                                               
+      59 +    if (results.length === 0) {                                
+      60 +      return res.json({                                        
+      61 +        movieCode,                                             
+      62 +        averageRating: 0,                                      
+      63 +        ratingCount: 0                                         
+      64 +      });                                                      
+      65 +    }                                                          
+      66 +                                                               
+      67 +    const summary = results[0];                                
+      68 +    res.json({                                                 
+      69 +      movieCode: summary._id,                                  
+      70 +      averageRating: summary.averageRating,                    
+      71 +      ratingCount: summary.ratingCount                         
+      72 +    });                                                        
+      73    } catch (err) { next(err); }
+      74  }
+
+● Write(src\routes\ratings.js)
+  ⎿  Added 4 lines, removed 1 line
+       8  
+       9  const router = Router();
+      10  
+      11 -// TODO: wire up the three routes in README.md section 2 and th
+         -e summary route in section 3.                                  
+      11 +router.get('/', getAllRatings);                                
+      12 +router.get('/summary', getRatingSummary);                      
+      13 +router.get('/:id', getRating);                                 
+      14 +router.post('/', createRating);                                
+      15  
+      16  export default router;
+
+● Agent "Plan the implementation of the Movie Rating API endpoints and model."
+finished · 4m 49s
+
+● I have implemented the requirements for the Movie Rating API. Here is a
+  summary of the changes:
+
+  1. Rating Model (server/src/models/Rating.js)
+
+  - Defined the schema with movieCode (required), rating (required, 1-5), note
+    (optional), and ratedBy (optional, ref to User).
+  - Enabled { timestamps: true }.
+  - Added a compound unique index on { movieCode: 1, ratedBy: 1 } to ensure a
+    user can only rate a movie once.
+
+  2. Rating Controller (server/src/controllers/ratingController.js)
+
+  - Validation: Implemented a Joi schema for createRating to validate inputs.
+  - createRating: Validates the request body, creates the rating, and returns
+    201. It also handles MongoDB duplicate key errors (code 11000) by returning
+    a 409 Conflict status.
+  - getAllRatings: Fetches all ratings using .lean() for better performance.
+  - getRating: Fetches a specific rating by ID, returning 404 if not found.
+  - getRatingSummary:
+    - Checks for the movieCode query parameter (returns 400 if missing).
+    - Uses a MongoDB aggregation pipeline ($match $\rightarrow$ $group) to
+      calculate the averageRating and ratingCount.
+    - Handles cases with no ratings by returning 0 for both metrics.
+
+  3. Rating Routes (server/src/routes/ratings.js)
+
+  - Wired the controller functions to the API paths.
+  - Critical Routing: Placed the /summary route before the /:id route to prevent
+    Express from treating the string "summary" as a rating ID.
+
+  The implementation follows the structural patterns established in the provided
+  userController and User model.
+
+✻ Sautéed for 2m 39s · done 10:24 AM
+
+※ recap: Goal: Build a Movie Rating API. I have implemented the model, controller, and routes as requested. Next action: verify the implementation by running tests or the server. (disable recaps in /config)
+
+❯ give me all types of testing for POSTMAN http requests and what to expect and 
+  implement testing yourself                                                    
+
+● Bash(npm test)
+  ⎿  Error: Exit code 127
+     npm error code ENOENT
+     npm error syscall open
+     npm error path D:\mmhaf\Documents\school\uni\sem7\media lab\Task 
+     2.2\Task2-ai-assisted-coding-lab2.2\package.json
+     npm error errno -4058
+     npm error enoent Could not read package.json: Error: ENOENT: no such file 
+     or directory, open 'D:\mmhaf\Documents\school\uni\sem7\media lab\Task 
+     2.2\Task2-ai-assisted-coding-lab2.2\package.json'
+     npm error enoent This is related to npm not being able to find a file.
+     npm error enoent
+     npm error A complete log of this run can be found in: C:\Users\mmhaf\AppDat
+     a\Local\npm-cache\_logs\2026-09-29T07_29_53_229Z-debug-0.log
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● Bash(cd server && npm test)
+  ⎿  Tool use rejected
+
+● Bash(cd server && npm test)
+  ⎿  Error: Exit code 1
+
+     > server@0.1.0 test
+     > NODE_OPTIONS=--experimental-vm-modules jest --runInBand
+
+     'NODE_OPTIONS' is not recognized as an internal or external command,
+     operable program or batch file.
+
+● Bash(cd server && npx cross-env NODE_OPTIONS=--experimental-vm-modules jest
+      --runInBand)
+  ⎿  Interrupted · What should Claude do instead?
+
+✻ Sautéed for 19s · done 10:31 AM
+
+❯ use cd server,  npm run dev, then npm test, and tell me how you will test     
+  using POSTMAN                                                                 
+● To test this API using Postman, you need to have the server running. Since npm
+  run dev starts a persistent process, I cannot run it and then run tests in
+  the same terminal window.
+
+  To run the server yourself:
+  1. Open a terminal and run: cd server && npm run dev
+  2. Keep that terminal open.
+  3. Open a second terminal to run the automated tests: cd server && npm test
+
+  ---
+
+  Postman Testing Guide
+
+  Here is the complete testing suite for the Movie Rating API. I have broken it
+  down by endpoint and the specific scenarios you should test.
+
+  1. Create a Rating (POST /api/ratings)
+
+  Request Body (JSON):
+  {
+    "movieCode": "MV101",
+    "rating": 5,
+    "note": "Amazing cinematography!",
+    "ratedBy": "650d1234567890abcdef1234"
+  }
+
+  ┌─────────────┬─────────────────┬────────────┬───────────────────────────┐
+  │    Test     │  Input Change   │ Expected   │      Expected Result      │
+  │  Scenario   │                 │   Status   │                           │
+  ├─────────────┼─────────────────┼────────────┼───────────────────────────┤
+  │ Success     │ Valid data      │ 201        │ Returns the created       │
+  │             │                 │ Created    │ rating object             │
+  ├─────────────┼─────────────────┼────────────┼───────────────────────────┤
+  │ Invalid     │ "rating": 6 or  │ 400 Bad    │ Error message: "rating"   │
+  │ Rating      │ 0               │ Request    │ must be between 1 and 5   │
+  ├─────────────┼─────────────────┼────────────┼───────────────────────────┤
+  │ Missing     │ Remove          │ 400 Bad    │ Error message:            │
+  │ Field       │ movieCode       │ Request    │ "movieCode" is required   │
+  ├─────────────┼─────────────────┼────────────┼───────────────────────────┤
+  │ Duplicate   │ Send same       │ 409        │ Error: "User has already  │
+  │ Rating      │ request twice   │ Conflict   │ rated this movie"         │
+  ├─────────────┼─────────────────┼────────────┼───────────────────────────┤
+  │ Invalid     │ "ratedBy":      │ 400 Bad    │ Validation error          │
+  │ User ID     │ "abc"           │ Request    │ (length/hex check)        │
+  └─────────────┴─────────────────┴────────────┴───────────────────────────┘
+
+  2. Get All Ratings (GET /api/ratings)
+
+  ┌─────────────┬──────────────┬───────────────────────────────────────────┐
+  │    Test     │  Expected    │              Expected Result              │
+  │  Scenario   │    Status    │                                           │
+  ├─────────────┼──────────────┼───────────────────────────────────────────┤
+  │ Fetch All   │ 200 OK       │ A JSON object { "ratings": [...] }        │
+  │             │              │ containing all entries                    │
+  ├─────────────┼──────────────┼───────────────────────────────────────────┤
+  │ Empty DB    │ 200 OK       │ An empty array { "ratings": [] }          │
+  └─────────────┴──────────────┴───────────────────────────────────────────┘
+
+  3. Get Single Rating (GET /api/ratings/:id)
+
+  ┌──────────────┬───────────────────────┬─────────────┬───────────────────┐
+  │    Test      │         Input         │  Expected   │  Expected Result  │
+  │   Scenario   │                       │   Status    │                   │
+  ├──────────────┼───────────────────────┼─────────────┼───────────────────┤
+  │ Valid ID     │ Use an ID from the    │ 200 OK      │ The specific      │
+  │              │ "Get All" list        │             │ rating object     │
+  ├──────────────┼───────────────────────┼─────────────┼───────────────────┤
+  │ Non-existent │ A valid ObjectId that │ 404 Not     │ { "message":      │
+  │  ID          │  isn't in DB          │ Found       │ "Rating not       │
+  │              │                       │             │ found" }          │
+  ├──────────────┼───────────────────────┼─────────────┼───────────────────┤
+  │              │                       │ 500         │ Handled by the    │
+  │ Malformed ID │ GET /api/ratings/123  │ Internal    │ global error      │
+  │              │                       │ Error       │ handler           │
+  └──────────────┴───────────────────────┴─────────────┴───────────────────┘
+
+  4. Get Rating Summary (GET /api/ratings/summary)
+
+  Request URL: /api/ratings/summary?movieCode=MV101
+
+  ┌───────────┬──────────────────┬───────────┬──────────────────────────────┐
+  │   Test    │   Input Change   │ Expected  │       Expected Result        │
+  │ Scenario  │                  │  Status   │                              │
+  ├───────────┼──────────────────┼───────────┼──────────────────────────────┤
+  │           │ movieCode with   │           │ { "movieCode": "MV101",      │
+  │ Success   │ ratings          │ 200 OK    │ "averageRating": 4.5,        │
+  │           │                  │           │ "ratingCount": 2 }           │
+  ├───────────┼──────────────────┼───────────┼──────────────────────────────┤
+  │ No        │ movieCode not in │           │ { "movieCode": "MV999",      │
+  │ Ratings   │  DB              │ 200 OK    │ "averageRating": 0,          │
+  │           │                  │           │ "ratingCount": 0 }           │
+  ├───────────┼──────────────────┼───────────┼──────────────────────────────┤
+  │ Missing   │ Remove           │ 400 Bad   │ { "message": "movieCode is   │
+  │ Param     │ ?movieCode=...   │ Request   │ required" }                  │
+  └───────────┴──────────────────┴───────────┴──────────────────────────────┘
+
+  Summary Checklist for your Postman Collection:
+
+  - [ ] Positive Path: Create $\rightarrow$ Get All $\rightarrow$ Get Summary
+    $\rightarrow$ Get by ID.
+  - [ ] Validation Path: Test ratings $<1$ and $>5$.
+  - [ ] Constraint Path: Try to rate the same movie twice with the same ratedBy
+    ID.
+  - [ ] Edge Case Path: Request summary for a movie that doesn't exist yet.
+
+✻ Worked for 16s · done 10:32 AM
+
+❯ now you can run tests and fix any errors that occur and explain why they      
+  happened                                                                      
+
+● Bash(cd server && npx cross-env NODE_OPTIONS=--experimental-vm-modules jest
+      --runInBand)
+  ⎿  Interrupted · What should Claude do instead?
+
+✻ Crunched for 6s · done 10:44 AM
+
+※ recap: The goal is to build a Movie Rating API. I have implemented the model, controllers, and routes. The next action is to run and verify the project using the provided test suite. (disable recaps in /config)
+
+❯ run and verify the project by using the run locally found in the README.md    
+  file                                                                          
+
+● Bash(cd server && npm install)
+  ⎿  up to date, audited 412 packages in 4s
+
+     59 packages are looking for funding
+     … +3 lines (ctrl+o to expand)
+
+● Bash(npm test)
+  ⎿  Error: Exit code 1
+
+     > server@0.1.0 test
+     > NODE_OPTIONS=--experimental-vm-modules jest --runInBand
+
+     'NODE_OPTIONS' is not recognized as an internal or external command,
+     operable program or batch file.
+
+● Bash(npx cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand)
+  ⎿  npm warn exec The following package was not found and will be installe
+     d: cross-env@10.1.0
+     (node:332) ExperimentalWarning: VM Modules is an experimental feature
+     … +36 lines (ctrl+o to expand)
+
+● The project has been verified successfully. I ran the test suite using npx 
+  cross-env to handle the Windows environment variable issue (NODE_OPTIONS).
+
+  Test Results
+
+  The automated grading script tests/grade.test.js was executed, and the results
+  are as follows:
+
+  Functional Grade: 8/8
+
+  ┌─────────────────────────────┬────────┬────────┐
+  │          Test Case          │ Result │ Status │
+  ├─────────────────────────────┼────────┼────────┤
+  │ Model fields                │ PASS   │ ✅     │
+  ├─────────────────────────────┼────────┼────────┤
+  │ Model rules                 │ PASS   │ ✅     │
+  ├─────────────────────────────┼────────┼────────┤
+  │ Timestamps and unique index │ PASS   │ ✅     │
+  ├─────────────────────────────┼────────┼────────┤
+  │ Create                      │ PASS   │ ✅     │
+  ├─────────────────────────────┼────────┼────────┤
+  │ List                        │ PASS   │ ✅     │
+  ├─────────────────────────────┼────────┼────────┤
+  │ Get one                     │ PASS   │ ✅     │
+  ├─────────────────────────────┼────────┼────────┤
+  │ Summary aggregation         │ PASS   │ ✅     │
+  ├─────────────────────────────┼────────┼────────┤
+  │ Summary query and routing   │ PASS   │ ✅     │
+  └─────────────────────────────┴────────┴────────┘
+
+  Verification Log
+
+  The console output confirms that all endpoints are behaving as expected:
+  - POST /api/ratings $\rightarrow$ 201 Created
+  - GET /api/ratings $\rightarrow$ 200 OK
+  - GET /api/ratings/:id (Valid) $\rightarrow$ 200 OK
+  - GET /api/ratings/:id (Invalid) $\rightarrow$ 404 Not Found
+  - GET /api/ratings/summary?movieCode=MV101 $\rightarrow$ 200 OK
+  - GET /api/ratings/summary?movieCode=MV999 $\rightarrow$ 200 OK (Handles no
+    ratings)
+  - GET /api/ratings/summary (Missing param) $\rightarrow$ 400 Bad Request
+
+  The implementation is complete and fully verified.
+
+✻ Worked for 56s · done 10:49 AM
