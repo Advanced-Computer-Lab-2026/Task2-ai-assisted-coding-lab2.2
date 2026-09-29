@@ -5,6 +5,26 @@ import mongoose from 'mongoose';
 const ratingSchema = new mongoose.Schema(
   {
     // TODO
+    movieCode: {
+  type: String,
+  required: true
+},
+
+rating: {
+  type: Number,
+  required: true,
+  min: 1,
+  max: 5
+},
+
+note: {
+  type: String
+},
+
+ratedBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'User'
+}
   },
   { timestamps: true }
 );
