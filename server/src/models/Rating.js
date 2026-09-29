@@ -1,14 +1,48 @@
-import mongoose from 'mongoose';
+/*import mongoose from 'mongoose';
 
 // TODO: define the Rating schema per README.md section 1.
 
 const ratingSchema = new mongoose.Schema(
   {
     // TODO
+    movieCode: {
+      type : String,
+      required: true
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5
+    },
+    note: {
+      type: String,
+      required: false
+    },
+    ratedBy: { type : mongoose.Schema.Types.ObjectId, ref: 'User', 
+      required: true }
+  },
+  { timestamps: true }
+);
+ratingSchema.index({ movieCode: 1, ratedBy: 1 }, { unique: true });
+// TODO: add the compound uniqueness constraint described in README.md section 1.
+
+export const Rating = mongoose.model('Rating', ratingSchema);*/
+import mongoose from 'mongoose';
+
+const ratingSchema = new mongoose.Schema(
+  {
+    movieCode: { type: String, required: true },
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    note: { type: String },
+    ratedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );
 
-// TODO: add the compound uniqueness constraint described in README.md section 1.
+ratingSchema.index(
+  { movieCode: 1, ratedBy: 1 },
+  { unique: true, partialFilterExpression: { ratedBy: { $type: 'objectId' } } }
+);
 
-export const Rating = mongoose.model('Rating', ratingSchema);
+export default mongoose.model('Rating', ratingSchema);
