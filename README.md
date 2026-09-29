@@ -98,6 +98,29 @@ Implement `getRatingSummary` and wire it as
 4. Fill in the pull request description using the provided template: the
    submission line must be your identifier in the format `XX-XXXXX TXX`.
 
+## Pull request check
+
+Before opening the PR, confirm the following:
+
+- [ ] I am working from my fork and submitting to the original repository.
+- [ ] I ran the project tests successfully: `cd server && npm test`.
+- [ ] I did not commit credentials, `.env`, or `node_modules`.
+- [ ] I updated the PR description using the template and included my identifier in the required format `XX-XXXXX TXX`.
+- [ ] I understand that AI tools are allowed, but I remain responsible for all code submitted.
+
+Example PR body:
+
+```md
+## Submission
+XX-XXXXX TXX
+
+## Checklist
+- [ ] I worked in my fork and am submitting to the original repository.
+- [ ] I ran the automated tests.
+- [ ] I did not commit credentials, .env, or node_modules.
+- [ ] I understand that AI tools are allowed and that I am responsible for the submitted code.
+```
+
 ## AI use
 
 You're expected to use AI tools while building this. You remain
