@@ -12,7 +12,8 @@ export async function getAllRatings(req, res, next) {
 // TODO: implement per README.md section 2.
 export async function getRating(req, res, next) {
   try {
-    // TODO
+   const ratings = await Rating.find();
+    res.status(200).json({ ratings });
   } catch (err) { next(err); }
 }
 
@@ -20,7 +21,8 @@ export async function getRating(req, res, next) {
 // TODO: implement per README.md section 2.
 export async function createRating(req, res, next) {
   try {
-    // TODO
+   const rating = await Rating.create(req.body);
+    res.status(201).json({ rating });
   } catch (err) { next(err); }
 }
 
@@ -28,6 +30,35 @@ export async function createRating(req, res, next) {
 // TODO: implement per README.md section 3.
 export async function getRatingSummary(req, res, next) {
   try {
-    // TODO
+   const { movieCode } = req.query;
+
+    if (!movieCode) {
+      return res.status(400).json({ message: 'movieCode is required' });
+    }
+
+    const result = await Rating.aggregate([
+      { $match: { movieCode } },
+      {
+        $group: {
+          _id: '$movieCode',
+          averageRating: { $avg: '$rating' },
+          ratingCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    if (result.length === 0) {
+      return res.status(200).json({
+        movieCode,
+        averageRating: 0,
+        ratingCount: 0,
+      });
+    }
+
+    res.status(200).json({
+      movieCode: result[0]._id,
+      averageRating: result[0].averageRating,
+      ratingCount: result[0].ratingCount,
+    });
   } catch (err) { next(err); }
 }
