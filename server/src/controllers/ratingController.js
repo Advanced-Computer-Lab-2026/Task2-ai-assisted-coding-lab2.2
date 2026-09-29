@@ -1,33 +1,77 @@
 import { Rating } from '../models/Rating.js';
 
 // GET /api/ratings
-// TODO: implement per README.md section 2.
 export async function getAllRatings(req, res, next) {
   try {
-    // TODO
+    const ratings = await Rating.find().populate('ratedBy', 'name email').sort({ createdAt: -1 }).lean();
+    res.json({ ratings });
   } catch (err) { next(err); }
 }
 
 // GET /api/ratings/:id
-// TODO: implement per README.md section 2.
 export async function getRating(req, res, next) {
   try {
-    // TODO
+    const rating = await Rating.findById(req.params.id).populate('ratedBy', 'name email');
+    if (!rating) return res.status(404).json({ message: 'Rating not found' });
+    res.json({ rating });
   } catch (err) { next(err); }
 }
 
 // POST /api/ratings
-// TODO: implement per README.md section 2.
 export async function createRating(req, res, next) {
   try {
-    // TODO
-  } catch (err) { next(err); }
+    const { movieCode, rating, note, ratedBy } = req.body;
+
+    if (!movieCode || rating === undefined) {
+      return res.status(400).json({ message: 'movieCode and rating are required' });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    }
+
+    const newRating = await Rating.create({ movieCode, rating, note, ratedBy });
+    res.status(201).json({ rating: newRating });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ message: 'User has already rated this movie' });
+    }
+    next(err);
+  }
 }
 
 // GET /api/ratings/summary?movieCode=MV101
-// TODO: implement per README.md section 3.
 export async function getRatingSummary(req, res, next) {
   try {
-    // TODO
+    const { movieCode } = req.query;
+    if (!movieCode) {
+      return res.status(400).json({ message: 'movieCode is required' });
+    }
+
+    const summary = await Rating.aggregate([
+      { $match: { movieCode: movieCode } },
+      {
+        $group: {
+          _id: '$movieCode',
+          averageRating: { $avg: '$rating' },
+          ratingCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    if (summary.length === 0) {
+      return res.json({
+        movieCode,
+        averageRating: 0,
+        ratingCount: 0
+      });
+    }
+
+    const result = summary[0];
+    res.json({
+      movieCode: result._id,
+      averageRating: result.averageRating,
+      ratingCount: result.ratingCount
+    });
   } catch (err) { next(err); }
 }
