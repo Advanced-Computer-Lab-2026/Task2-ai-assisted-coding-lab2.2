@@ -8,6 +8,14 @@ import {
 
 const router = Router();
 
-// TODO: wire up the three routes in README.md section 2 and the summary route in section 3.
+// 1. Standard endpoints
+router.post('/', createRating);
+router.get('/', getAllRatings);
+
+// 2. Summary endpoint MUST be defined BEFORE /:id so Express doesn't match "summary" as an ID
+router.get('/summary', getRatingSummary);
+
+// 3. Dynamic ID endpoint MUST come last
+router.get('/:id', getRating);
 
 export default router;
