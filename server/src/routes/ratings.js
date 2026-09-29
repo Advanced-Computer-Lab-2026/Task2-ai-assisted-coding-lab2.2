@@ -8,6 +8,16 @@ import {
 
 const router = Router();
 
-// TODO: wire up the three routes in README.md section 2 and the summary route in section 3.
+// GET /api/ratings/summary?movieCode=...
+router.get('/summary', getRatingSummary);
+
+// GET /api/ratings
+router.get('/', getAllRatings);
+
+// GET /api/ratings/:id
+router.get('/:id', getRating);
+
+// POST /api/ratings
+router.post('/', createRating);
 
 export default router;
