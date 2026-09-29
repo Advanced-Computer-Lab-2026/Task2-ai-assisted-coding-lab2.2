@@ -1,0 +1,93 @@
+### API Tests — Movie Rating API
+# Run the server first: cd server && npm run dev
+
+@baseUrl = http://localhost:4000/api
+
+### 1. Health check — verify the server is running
+GET {{baseUrl}}/health
+
+### ==========================================
+### Ratings endpoints
+### ==========================================
+
+### 2. Create a new rating (POST /api/ratings)
+# Success: 201 { rating: <document> }
+POST {{baseUrl}}/ratings
+Content-Type: application/json
+
+{
+  "movieCode": "MV101",
+  "rating": 5,
+  "note": "Great movie!",
+  "ratedBy": "000000000000000000000001"
+}
+
+### 3. Get all ratings (GET /api/ratings)
+# Success: 200 { ratings: [...] }
+GET {{baseUrl}}/ratings
+
+### 4. Get a single rating by id (GET /api/ratings/:id)
+# Replace the id with a real _id returned by the POST or GET above.
+# Success: 200 { rating: <document> } | Not found: 404 { message: 'Rating not found' }
+GET {{baseUrl}}/ratings/000000000000000000000001
+
+### 5. Rating summary for a movie (GET /api/ratings/summary?movieCode=MV101)
+# Success: 200 { movieCode, averageRating, ratingCount }
+# Missing movieCode: 400 { message: 'movieCode is required' }
+GET {{baseUrl}}/ratings/summary?movieCode=MV101
+
+### 6. Rating summary without movieCode — expect 400
+GET {{baseUrl}}/ratings/summary
+
+### 7. Create a rating with an invalid rating value — expect 400/500 (validation)
+POST {{baseUrl}}/ratings
+Content-Type: application/json
+
+{
+  "movieCode": "MV102",
+  "rating": 9
+}
+
+### ==========================================
+### Users endpoints
+### ==========================================
+
+### 8. Get all users (GET /api/users)
+# Success: 200 { users: [...] }
+GET {{baseUrl}}/users
+
+### 9. Create a new user (POST /api/users)
+# Success: 201 { user: <document> }
+# Requires: name (min 2 chars), valid email, password (min 6 chars)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "password": "secret123"
+}
+
+### 10. Get a single user by id (GET /api/users/:id)
+# Replace the id with a real _id returned by the POST above.
+# Success: 200 { user: <document> } | Not found: 404 { message: 'User not found' }
+GET {{baseUrl}}/users/000000000000000000000001
+
+### 11. Update a user (PATCH /api/users/:id)
+# Replace the id with a real _id returned by the POST above.
+# Success: 200 { user: <document> }
+PATCH {{baseUrl}}/users/000000000000000000000001
+Content-Type: application/json
+
+{
+  "name": "Jane A. Doe",
+  "email": "jane.a.doe@example.com"
+}
+
+### 12. Delete a user (DELETE /api/users/:id)
+# Replace the id with a real _id returned by the POST above.
+# Success: 200 { ok: true } | Not found: 404 { message: 'User not found' }
+DELETE {{baseUrl}}/users/000000000000000000000001
+
+### 13. Unknown route — expect 404 { message: 'Not Found' }
+GET {{baseUrl}}/unknown-route
