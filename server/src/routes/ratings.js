@@ -1,13 +1,12 @@
-import { Router } from 'express';
-import {
-  getAllRatings,
-  getRating,
-  createRating,
-  getRatingSummary
-} from '../controllers/ratingController.js';
+import express from 'express';
+import * as ratingController from '../controllers/ratingController.js';
 
-const router = Router();
+const router = express.Router();
 
-// TODO: wire up the three routes in README.md section 2 and the summary route in section 3.
+// Summary must come BEFORE :id
+router.get('/summary', ratingController.getRatingSummary);
+router.get('/', ratingController.getAllRatings);
+router.get('/:id', ratingController.getRating);
+router.post('/', ratingController.createRating);
 
 export default router;
