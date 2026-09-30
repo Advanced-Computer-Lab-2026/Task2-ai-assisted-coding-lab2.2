@@ -36,25 +36,25 @@ export async function createRating(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// GET /api/ratings/summary?bookCode=BK101
+// GET /api/ratings/summary?movieCode=MV101
 // TODO: implement per README.md section 3.
 export async function getRatingSummary(req, res, next) {
   try {
-   const { bookCode } = req.query;
+   const { movieCode } = req.query;
 
-    if (!bookCode) {
+    if (!movieCode) {
       return res.status(400).json({
-        message: 'bookCode is required'
+        message: 'movieCode is required'
       });
     }
 
     const result = await Rating.aggregate([
       {
-        $match: { bookCode }
+        $match: { movieCode }
       },
       {
         $group: {
-          _id: '$bookCode',
+          _id: '$movieCode',
           averageRating: { $avg: '$rating' },
           ratingCount: { $sum: 1 }
         }
@@ -63,14 +63,14 @@ export async function getRatingSummary(req, res, next) {
 
     if (result.length === 0) {
       return res.status(200).json({
-        bookCode,
+        movieCode,
         averageRating: 0,
         ratingCount: 0
       });
     }
 
     res.status(200).json({
-      bookCode,
+      movieCode,
       averageRating: result[0].averageRating,
       ratingCount: result[0].ratingCount
     });
